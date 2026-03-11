@@ -112,6 +112,49 @@ def already_crawled(row):
     return False
 
 # ==============================
+# 反爬检测
+# ==============================
+
+def check_anti_bot(page):
+
+    url = page.url
+
+    if "err.vip.com/noProduct.html" in url:
+        return True
+
+    try:
+        text = page.inner_text("body")
+
+        if "无法在电脑上查看" in text:
+            return True
+
+    except:
+        pass
+
+    return False
+
+# ==============================
+# 反爬处理
+# ==============================
+
+def handle_anti_bot():
+
+    if os.path.exists(AUTH_FILE):
+        os.remove(AUTH_FILE)
+
+    print("\n")
+    print("======================================")
+    print("检测到唯品会反爬机制")
+    print("登录信息已清除")
+    print("请等待 30 分钟后重新运行程序")
+    print("======================================")
+    print("\n")
+
+    input("按回车退出程序")
+
+    sys.exit()
+
+# ==============================
 # 浏览器指纹
 # ==============================
 
@@ -130,9 +173,7 @@ def create_context(browser):
     )
 
     context.add_init_script("""
-
 Object.defineProperty(navigator,'webdriver',{get:()=>undefined})
-
 """)
 
     return context
@@ -196,7 +237,7 @@ def manual_login(p):
     browser.close()
 
 # ==============================
-# 抓取
+# 抓取商品
 # ==============================
 
 def fetch_vip_data(page,pid):
@@ -207,9 +248,15 @@ def fetch_vip_data(page,pid):
 
         page.goto(url,timeout=15000)
 
+        if check_anti_bot(page):
+            handle_anti_bot()
+
         simulate_user(page)
 
         page.wait_for_selector(".sp-price",timeout=10000)
+
+        if check_anti_bot(page):
+            handle_anti_bot()
 
         brand="未知品牌"
         title="未知标题"
